@@ -15,7 +15,7 @@ conn = psycopg2.connect(
 cursor = conn.cursor()
 
 cursor.execute("""
-    CREATE TABLE users (r
+    CREATE TABLE users (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
         email TEXT NOT NULL,
@@ -45,7 +45,7 @@ cursor.execute("""
         group_id INTEGER REFERENCES groups(id),
         user_id INTEGER REFERENCES users(id),
         cost REAL,
-        desc TEXT,
+        description TEXT,
         date TEXT
     )
 """)
