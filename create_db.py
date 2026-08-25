@@ -36,9 +36,11 @@ cursor.execute("""
         id SERIAL PRIMARY KEY,
         group_id INTEGER REFERENCES groups(id),
         user_id INTEGER REFERENCES users(id),
-        split_ratio REAL
+        split_ratio REAL,
+        UNIQUE(group_id, user_id)
     )
 """)
+
 cursor.execute("""
     CREATE TABLE expenses (
         id SERIAL PRIMARY KEY,
@@ -49,6 +51,7 @@ cursor.execute("""
         date TEXT
     )
 """)
+
 cursor.execute("""
     CREATE TABLE expense_splits (
         id SERIAL PRIMARY KEY,
@@ -57,5 +60,6 @@ cursor.execute("""
         cost REAL
     )
 """)
+
 conn.commit()
 conn.close()
