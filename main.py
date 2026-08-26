@@ -52,6 +52,12 @@ class Expense(BaseModel):
     cost: float
     desc: str
     date: str
+    
+class Settlement(BaseModel):
+    group_id: int
+    from_user: int
+    to_user: int
+    amount: float
 
 @app.post("/users")
 def create_user(user: User):
@@ -296,3 +302,50 @@ def get_fairness_drift(group_id: int, user_id: int):
             "reason": "Contribution has varied — no consistent pattern detected",
             "recent_drifts": recent_drifts
         }
+        
+@app.get("/groups/{group_id}/expenses")
+def list_group_expenses(group_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM expenses WHERE group_id = %s", (group_id,))
+    rows = cursor.fetchall()
+    
+    conn.close()
+    return rows
+
+@app.get("/users/{user_id}/groups")
+def list_user_groups(user_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT groups.id, groups.name
+        FROM groups
+        JOIN group_members ON groups.id = group_members.group_id
+        WHERE group_members.user_id = %s
+    """, (user_id,))
+    rows = cursor.fetchall()
+    
+    conn.close()
+    return rows
+
+@app.post("/settle")
+def settle_payment(settlement: Settlement):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "INSERT INTO expenses (group_id, user_id, cost, description, date) VALUES (%s, %s, %s, %s, %s) RETURNING id",
+        (settlement.group_id, settlement.from_user, settlement.amount, "Settlement payment", str(date.today()))
+    )
+    new_expense_id = cursor.fetchone()[0]
+
+    cursor.execute(
+        "INSERT INTO expense_splits (expense_id, user_id, cost) VALUES (%s, %s, %s)",
+        (new_expense_id, settlement.to_user, settlement.amount)
+    )
+
+    conn.commit()
+    conn.close()
+    return {"message": "Settlement recorded successfully"}
