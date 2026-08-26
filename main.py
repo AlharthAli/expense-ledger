@@ -208,6 +208,7 @@ def simplify_debts(balances):
             debtors.pop(0)
 
     return transactions
+
 @app.get("/groups/{group_id}/settlement")
 def get_settlement(group_id: int):
     conn = get_connection()
@@ -236,3 +237,62 @@ def get_settlement(group_id: int):
     transactions = simplify_debts(balances)
 
     return {"balances": balances, "settlement": transactions}
+
+DRIFT_WINDOW = 5  # how many recent expenses to look back across
+
+@app.get("/groups/{group_id}/members/{user_id}/drift")
+def get_fairness_drift(group_id: int, user_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT expenses.id, expenses.user_id, expenses.cost, expense_splits.cost
+        FROM expenses
+        JOIN expense_splits ON expenses.id = expense_splits.expense_id
+        WHERE expenses.group_id = %s AND expense_splits.user_id = %s
+        ORDER BY expenses.date
+    """, (group_id, user_id))
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    if not rows:
+        return {"message": "No expense history yet for this member"}
+
+    # Calculate drift (actual contribution - fair share) for every expense
+    drifts = []
+    for row in rows:
+        expense_id, paid_by, total_cost, split_amount = row
+        actual_paid = total_cost if paid_by == user_id else 0
+        drift = round(actual_paid - split_amount, 2)
+        drifts.append(drift)
+
+    # Only look at the most recent N expenses
+    recent_drifts = drifts[-DRIFT_WINDOW:]
+
+    if len(recent_drifts) < DRIFT_WINDOW:
+        return {
+            "message": f"Not enough history yet ({len(recent_drifts)}/{DRIFT_WINDOW} expenses) to detect drift",
+            "recent_drifts": recent_drifts
+        }
+
+    if all(d > 0 for d in recent_drifts):
+        return {
+            "drift_detected": True,
+            "direction": "overpaying",
+            "reason": f"Consistently paid more than their fair share across the last {DRIFT_WINDOW} expenses",
+            "recent_drifts": recent_drifts
+        }
+    elif all(d < 0 for d in recent_drifts):
+        return {
+            "drift_detected": True,
+            "direction": "underpaying",
+            "reason": f"Consistently paid less than their fair share across the last {DRIFT_WINDOW} expenses",
+            "recent_drifts": recent_drifts
+        }
+    else:
+        return {
+            "drift_detected": False,
+            "reason": "Contribution has varied — no consistent pattern detected",
+            "recent_drifts": recent_drifts
+        }
