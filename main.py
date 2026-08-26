@@ -146,3 +146,93 @@ def create_expense(expense: Expense):
     conn.commit()
     conn.close()
     return {"message": "Expense added and split successfully"}
+
+@app.get("/groups/{group_id}/balances")
+def get_group_balances(group_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Total each person paid in this group
+    cursor.execute(
+        "SELECT user_id, SUM(cost) FROM expenses WHERE group_id = %s GROUP BY user_id",
+        (group_id,)
+    )
+    paid = dict(cursor.fetchall())
+
+    # Total each person owes (their share of every expense in this group)
+    cursor.execute("""
+        SELECT expense_splits.user_id, SUM(expense_splits.cost)
+        FROM expense_splits
+        JOIN expenses ON expense_splits.expense_id = expenses.id
+        WHERE expenses.group_id = %s
+        GROUP BY expense_splits.user_id
+    """, (group_id,))
+    owed = dict(cursor.fetchall())
+
+    conn.close()
+
+    # Combine into net balances: positive = owed money, negative = owes money
+    member_ids = set(paid.keys()) | set(owed.keys())
+    balances = {}
+    for user_id in member_ids:
+        balances[user_id] = round(paid.get(user_id, 0) - owed.get(user_id, 0), 2)
+
+    return balances
+def simplify_debts(balances):
+    creditors = [[uid, bal] for uid, bal in balances.items() if bal > 0]
+    debtors = [[uid, bal] for uid, bal in balances.items() if bal < 0]
+
+    transactions = []
+
+    while creditors and debtors:
+        creditors.sort(key=lambda x: x[1], reverse=True)
+        debtors.sort(key=lambda x: x[1])
+
+        creditor = creditors[0]
+        debtor = debtors[0]
+
+        payment = round(min(creditor[1], -debtor[1]), 2)
+
+        transactions.append({
+            "from_user": debtor[0],
+            "to_user": creditor[0],
+            "amount": payment
+        })
+
+        creditor[1] -= payment
+        debtor[1] += payment
+
+        if creditor[1] == 0:
+            creditors.pop(0)
+        if debtor[1] == 0:
+            debtors.pop(0)
+
+    return transactions
+@app.get("/groups/{group_id}/settlement")
+def get_settlement(group_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT user_id, SUM(cost) FROM expenses WHERE group_id = %s GROUP BY user_id",
+        (group_id,)
+    )
+    paid = dict(cursor.fetchall())
+
+    cursor.execute("""
+        SELECT expense_splits.user_id, SUM(expense_splits.cost)
+        FROM expense_splits
+        JOIN expenses ON expense_splits.expense_id = expenses.id
+        WHERE expenses.group_id = %s
+        GROUP BY expense_splits.user_id
+    """, (group_id,))
+    owed = dict(cursor.fetchall())
+
+    conn.close()
+
+    member_ids = set(paid.keys()) | set(owed.keys())
+    balances = {uid: round(paid.get(uid, 0) - owed.get(uid, 0), 2) for uid in member_ids}
+
+    transactions = simplify_debts(balances)
+
+    return {"balances": balances, "settlement": transactions}
