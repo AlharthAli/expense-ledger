@@ -1,0 +1,52 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --paper:     #F4F1EA;
+  --paper-2:   #EDE9DF;
+  --ink:       #1C1A17;
+  --ink-faint: #6B6760;
+  --ink-rule:  #C8C4BB;
+  --green:     #2D4A3A;
+  --green-bg:  #E8F0EC;
+  --red:       #8B4038;
+  --red-bg:    #F2E5E4;
+  --border:    #D4CFC6;
+
+  --serif: 'Fraunces', Georgia, serif;
+  --sans:  'Inter', system-ui, sans-serif;
+  --mono:  'JetBrains Mono', 'Courier New', monospace;
+
+  font-family: var(--sans);
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--sans);
+}
+
+input, select, textarea {
+  font-family: var(--sans);
+}
+
+a {
+  color: var(--ink);
+  text-decoration: none;
+}

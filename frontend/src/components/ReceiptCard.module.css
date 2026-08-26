@@ -1,0 +1,232 @@
+.wrapper {
+  position: relative;
+}
+
+/* Torn edges */
+.tornTop,
+.tornBottom {
+  width: 100%;
+  height: 18px;
+  background-repeat: repeat-x;
+  background-size: 20px 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.tornTop {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='18'%3E%3Cpath d='M0 18 L4 4 L7 12 L10 2 L13 10 L16 3 L20 18 Z' fill='%23FDFAF4' stroke='%23D4CFC6' stroke-width='0.5'/%3E%3C/svg%3E");
+  box-shadow: 0 -2px 4px rgba(28,26,23,0.06);
+}
+
+.tornBottom {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='18'%3E%3Cpath d='M0 0 L4 14 L7 6 L10 16 L13 8 L16 15 L20 0 Z' fill='%23FDFAF4' stroke='%23D4CFC6' stroke-width='0.5'/%3E%3C/svg%3E");
+  box-shadow: 0 2px 4px rgba(28,26,23,0.06);
+}
+
+.receipt {
+  background: #FDFAF4;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 1.25rem 1.5rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  line-height: 1.6;
+  color: var(--ink);
+  box-shadow: 2px 0 8px rgba(28,26,23,0.04), -2px 0 8px rgba(28,26,23,0.04);
+  /* Subtle paper texture via repeating gradient */
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 23px,
+    rgba(28,26,23,0.025) 23px,
+    rgba(28,26,23,0.025) 24px
+  );
+}
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.storeName {
+  font-family: var(--serif);
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  line-height: 1.1;
+}
+
+.storeTagline {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-faint);
+  margin-bottom: 0.4rem;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.62rem;
+  color: var(--ink-faint);
+}
+
+/* Dashed divider */
+.dash {
+  border-top: 1px dashed var(--ink-rule);
+  margin: 0.6rem 0;
+}
+
+/* Rows */
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.1rem 0;
+}
+
+.rowLabel {
+  color: var(--ink-faint);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+}
+
+.rowValue {
+  font-weight: 500;
+  font-size: 0.72rem;
+}
+
+/* Section label */
+.sectionLabel {
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  color: var(--ink-faint);
+  margin-bottom: 0.35rem;
+  text-align: center;
+}
+
+/* Expense line items */
+.lineItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.15rem 0;
+}
+
+.lineItemDesc {
+  color: var(--ink);
+  font-size: 0.68rem;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 0.5rem;
+}
+
+.lineItemRight {
+  flex-shrink: 0;
+}
+
+.lineItemCost {
+  font-weight: 500;
+  font-size: 0.72rem;
+  color: var(--ink);
+}
+
+/* Total */
+.totalRow {
+  padding: 0.2rem 0;
+}
+
+.totalLabel {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+}
+
+.totalAmount {
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* Balance rows */
+.balanceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.18rem 0;
+}
+
+.balanceRowMe {
+  background: rgba(28, 26, 23, 0.04);
+  padding: 0.2rem 0.35rem;
+  margin: 0 -0.35rem;
+}
+
+.balanceUid {
+  font-size: 0.65rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+}
+
+.balanceAmt {
+  font-weight: 500;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.green { color: var(--green); }
+.red   { color: var(--red); }
+
+/* My net */
+.myNet {
+  text-align: center;
+  padding: 0.5rem 0 0.25rem;
+}
+
+.myNetLabel {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  color: var(--ink-faint);
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.myNetAmt {
+  font-family: var(--serif);
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.greenBig { color: var(--green); }
+.redBig   { color: var(--red); }
+
+.myNetStatus {
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  font-weight: 500;
+}
+
+.greenLabel { color: var(--green); }
+.redLabel   { color: var(--red); }
+
+/* Footer */
+.footer {
+  text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+  line-height: 1.8;
+}
+
+.footerSmall {
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-rule);
+}

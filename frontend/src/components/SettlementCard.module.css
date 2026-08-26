@@ -1,0 +1,127 @@
+.card {
+  background: #FDFAF4;
+  border: 1px solid var(--border);
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 6px rgba(28,26,23,0.06);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.2rem;
+}
+
+.title {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: var(--ink);
+}
+
+.subtitle {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--ink-faint);
+}
+
+.dash {
+  border-top: 1px dashed var(--ink-rule);
+  margin: 0.75rem 0;
+}
+
+.sectionLabel {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  color: var(--ink-faint);
+  margin-bottom: 0.5rem;
+}
+
+/* Transaction rows */
+.txn {
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border-left: 3px solid transparent;
+}
+
+.txnOwe {
+  background: var(--red-bg);
+  border-left-color: var(--red);
+}
+
+.txnOwed {
+  background: var(--green-bg);
+  border-left-color: var(--green);
+}
+
+.txnNeutral {
+  background: var(--paper-2);
+  border-left-color: var(--border);
+}
+
+.txnArrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.txnDirection {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+}
+
+.txnAmt {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.txnParties {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--ink-faint);
+  margin-top: 0.15rem;
+}
+
+.green { color: var(--green); }
+.red   { color: var(--red); }
+
+/* Settled state */
+.settled {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.settledIcon {
+  display: block;
+  font-size: 1.75rem;
+  color: var(--green);
+  margin-bottom: 0.5rem;
+}
+
+.settledMsg {
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  color: var(--green);
+  margin-bottom: 0.3rem;
+}
+
+.settledSub {
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+
+.hint {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--ink-rule);
+  text-align: center;
+  letter-spacing: 0.04em;
+}
