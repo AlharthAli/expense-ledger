@@ -7,7 +7,14 @@ async function request(method, path, body) {
   };
   if (body !== undefined) opts.body = JSON.stringify(body);
   const res = await fetch(`${BASE}${path}`, opts);
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    let message = `${res.status} ${res.statusText}`
+    try {
+      const body = await res.json()
+      if (body.detail) message = body.detail
+    } catch {}
+    throw new Error(message)
+  }
   return res.json();
 }
 
@@ -21,6 +28,12 @@ export const api = {
   getUserGroups: (userId) =>
     request("GET", `/users/${userId}/groups`),
 
+  getGroupMembers: (groupId) =>
+    request("GET", `/groups/${groupId}/members`),
+
+  updateMemberSplit: (groupId, userId, splitRatio) =>
+    request("PATCH", `/groups/${groupId}/members/${userId}`, { split_ratio: splitRatio }),
+
   getGroupBalances: (groupId) =>
     request("GET", `/groups/${groupId}/balances`),
 
@@ -33,9 +46,21 @@ export const api = {
   createGroup: (name) =>
     request("POST", "/groups", { name }),
 
-  createExpense: (groupId, userId, cost, desc, date) =>
-    request("POST", "/expenses", { group_id: groupId, user_id: userId, cost, desc, date }),
+  createExpense: (groupId, userId, cost, desc, date, splits = null) =>
+    request("POST", "/expenses", { group_id: groupId, user_id: userId, cost, desc, date, ...(splits ? { splits } : {}) }),
+
+  createGuestUser: (name) =>
+    request("POST", "/users/guest", { name }),
+
+  lookupUser: (email) =>
+    request("GET", `/users/lookup?email=${encodeURIComponent(email)}`),
 
   addGroupMember: (groupId, userId, splitRatio) =>
     request("POST", "/group-members", { group_id: groupId, user_id: userId, split_ratio: splitRatio }),
+
+  settle: (groupId, fromUser, toUser, amount) =>
+    request("POST", "/settle", { group_id: groupId, from_user: fromUser, to_user: toUser, amount }),
+
+  getDrift: (groupId, userId) =>
+    request("GET", `/groups/${groupId}/members/${userId}/drift`),
 };

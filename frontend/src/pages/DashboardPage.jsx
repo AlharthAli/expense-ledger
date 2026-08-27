@@ -7,6 +7,7 @@ import SettlementCard from '../components/SettlementCard'
 import ExpenseFeed from '../components/ExpenseFeed'
 import AddExpenseForm from '../components/AddExpenseForm'
 import MembersPanel from '../components/MembersPanel'
+import DriftBanner from '../components/DriftBanner'
 import styles from './DashboardPage.module.css'
 
 const TABS = [
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   const [balances, setBalances] = useState(null)
   const [settlement, setSettlement] = useState(null)
   const [expenses, setExpenses] = useState([])
+  const [drift, setDrift] = useState(null)
   const [loading, setLoading] = useState(false)
   const [groupsLoading, setGroupsLoading] = useState(true)
   const [error, setError] = useState('')
@@ -35,6 +37,7 @@ export default function DashboardPage() {
   const [newGroupName, setNewGroupName] = useState('')
   const [newGroupLoading, setNewGroupLoading] = useState(false)
   const [newGroupError, setNewGroupError] = useState('')
+  const [newGroupKey, setNewGroupKey] = useState(0)
 
   useEffect(() => {
     setGroupsLoading(true)
@@ -50,14 +53,17 @@ export default function DashboardPage() {
     setBalances(null)
     setSettlement(null)
     setExpenses([])
+    setDrift(null)
     try {
-      const [bal, settle, exp] = await Promise.all([
+      const [bal, settle, exp, driftData] = await Promise.all([
         api.getGroupBalances(groupId),
         api.getGroupSettlement(groupId),
         api.getGroupExpenses(groupId),
+        api.getDrift(groupId, user.id).catch(() => null), // non-fatal
       ])
       setBalances(bal)
       setSettlement(settle)
+      setDrift(driftData)
       setExpenses(exp.map(r => ({
         id: r[0], group_id: r[1], user_id: r[2],
         cost: r[3], description: r[4], date: r[5],
@@ -67,7 +73,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [user.id])
 
   function selectGroup(group) {
     setSelectedGroup(group)
@@ -86,6 +92,11 @@ export default function DashboardPage() {
     loadGroup(selectedGroup.id)
   }
 
+  // Called by SettlementCard after a successful settle
+  function handleSettled() {
+    loadGroup(selectedGroup.id)
+  }
+
   async function handleCreateGroup(e) {
     e.preventDefault()
     const name = newGroupName.trim()
@@ -93,22 +104,16 @@ export default function DashboardPage() {
     setNewGroupLoading(true)
     setNewGroupError('')
     try {
-      // POST /groups returns no ID. Infer it: the DB uses a serial PK so the
-      // new group's ID will be max(all known group IDs across user's memberships) + 1.
-      // We snapshot all current groups first, including any the user is already in.
-      const allKnownIds = groups.map(g => g.id)
-      const guessedId = allKnownIds.length > 0 ? Math.max(...allKnownIds) + 1 : 1
-
-      await api.createGroup(name)
+      const { group_id: newId } = await api.createGroup(name)
       // Add creator as member so the group appears in their list
-      await api.addGroupMember(guessedId, user.id, 1.0)
+      await api.addGroupMember(newId, user.id, 1.0)
 
       // Refetch groups — new group now shows up because user is a member
       const rows = await api.getUserGroups(user.id)
       const updated = rows.map(r => ({ id: r[0], name: r[1] }))
       setGroups(updated)
 
-      const newGroup = updated.find(g => g.id === guessedId)
+      const newGroup = updated.find(g => g.id === newId)
       setShowNewGroup(false)
       setNewGroupName('')
       if (newGroup) selectGroup(newGroup)
@@ -163,11 +168,13 @@ export default function DashboardPage() {
         {showNewGroup ? (
           <form onSubmit={handleCreateGroup} className={styles.newGroupForm}>
             <input
+              key={newGroupKey}
               className={styles.newGroupInput}
               value={newGroupName}
               onChange={e => { setNewGroupName(e.target.value); setNewGroupError('') }}
               placeholder="Group name"
-              autoFocus
+              autoComplete="off"
+              name={`new-group-${newGroupKey}`}
               required
             />
             {newGroupError && <p className={styles.newGroupError}>{newGroupError}</p>}
@@ -185,7 +192,7 @@ export default function DashboardPage() {
             </div>
           </form>
         ) : (
-          <button className={styles.newGroupBtn} onClick={() => setShowNewGroup(true)}>
+          <button className={styles.newGroupBtn} onClick={() => { setShowNewGroup(true); setNewGroupKey(k => k + 1) }}>
             + New group
           </button>
         )}
@@ -233,18 +240,23 @@ export default function DashboardPage() {
 
             <div className={styles.tabContent}>
               {activeTab === 'overview' && (
-                <div className={styles.panels}>
-                  <ReceiptCard
-                    groupName={selectedGroup.name}
-                    balances={balances}
-                    expenses={expenses}
-                    currentUserId={user.id}
-                  />
-                  <SettlementCard
-                    settlement={settlement}
-                    currentUserId={user.id}
-                  />
-                </div>
+                <>
+                  <DriftBanner drift={drift} />
+                  <div className={styles.panels}>
+                    <ReceiptCard
+                      groupName={selectedGroup.name}
+                      balances={balances}
+                      expenses={expenses}
+                      currentUserId={user.id}
+                    />
+                    <SettlementCard
+                      settlement={settlement}
+                      currentUserId={user.id}
+                      groupId={selectedGroup.id}
+                      onSettled={handleSettled}
+                    />
+                  </div>
+                </>
               )}
 
               {activeTab === 'feed' && (

@@ -1,7 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import os
+import uuid
 import psycopg2
 from dotenv import load_dotenv
 from passlib.context import CryptContext
@@ -19,6 +21,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Catch any unhandled exception and return a JSON response so that
+# CORS headers are always present (raw uvicorn 500s have no CORS headers).
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error — check your input and try again."},
+    )
 
 def get_connection():
     return psycopg2.connect(
@@ -46,18 +57,53 @@ class GroupMember(BaseModel):
     user_id: int
     split_ratio: float
 
+class ExpenseSplit(BaseModel):
+    user_id: int
+    split_ratio: float
+
 class Expense(BaseModel):
     group_id: int
     user_id: int
     cost: float
     desc: str
     date: str
+    splits: list[ExpenseSplit] | None = None
     
 class Settlement(BaseModel):
     group_id: int
     from_user: int
     to_user: int
     amount: float
+
+@app.post("/users/guest")
+def create_guest_user(body: dict):
+    name = (body.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Name is required.")
+    # Generate a unique internal placeholder so the unique email constraint is satisfied.
+    # These accounts cannot be logged into — they have no real email or password.
+    placeholder_email = f"guest_{uuid.uuid4().hex}@ledger.internal"
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO users (name, email, password_hash, created_at) VALUES (%s, %s, %s, %s) RETURNING id",
+        (name, placeholder_email, "", str(date.today()))
+    )
+    new_id = cursor.fetchone()[0]
+    conn.commit()
+    conn.close()
+    return {"user_id": new_id, "name": name}
+
+@app.get("/users/lookup")
+def lookup_user(email: str):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name FROM users WHERE email = %s", (email,))
+    row = cursor.fetchone()
+    conn.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail="No account found with that email address.")
+    return {"user_id": row[0], "name": row[1]}
 
 @app.post("/users")
 def create_user(user: User):
@@ -100,26 +146,35 @@ def create_group(group: Group):
     cursor = conn.cursor()
     
     cursor.execute(
-        "INSERT INTO groups (name) VALUES (%s)",
+        "INSERT INTO groups (name) VALUES (%s) RETURNING id",
         (group.name,)
     )
-    
+    new_id = cursor.fetchone()[0]
     conn.commit()
     conn.close()
-    return {"message": "Group created successfully"}
+    return {"group_id": new_id}
 
 @app.post("/group-members")
 def add_group_member(member: GroupMember):
     conn = get_connection()
     cursor = conn.cursor()
-    
-    cursor.execute(
-        "INSERT INTO group_members (group_id, user_id, split_ratio) VALUES (%s, %s, %s)",
-        (member.group_id, member.user_id, member.split_ratio)
-    )
-    
-    conn.commit()
-    conn.close()
+    try:
+        cursor.execute(
+            "INSERT INTO group_members (group_id, user_id, split_ratio) VALUES (%s, %s, %s)",
+            (member.group_id, member.user_id, member.split_ratio)
+        )
+        conn.commit()
+    except psycopg2.errors.ForeignKeyViolation:
+        conn.rollback()
+        raise HTTPException(status_code=400, detail="User not found. Make sure the user ID is correct.")
+    except psycopg2.errors.UniqueViolation:
+        conn.rollback()
+        raise HTTPException(status_code=400, detail="This user is already a member of the group.")
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        conn.close()
     return {"message": "Group member added successfully"}
 
 @app.post("/expenses")
@@ -133,12 +188,15 @@ def create_expense(expense: Expense):
     )
     new_expense_id = cursor.fetchone()[0]
     
-    cursor.execute(
-        "SELECT user_id, split_ratio FROM group_members WHERE group_id = %s",
-        (expense.group_id,)
-    )
-    members = cursor.fetchall()
-    
+    if expense.splits:
+        members = [(s.user_id, s.split_ratio) for s in expense.splits]
+    else:
+        cursor.execute(
+            "SELECT user_id, split_ratio FROM group_members WHERE group_id = %s",
+            (expense.group_id,)
+        )
+        members = cursor.fetchall()
+
     for member in members:
         member_user_id = member[0]
         member_ratio = member[1]
@@ -333,6 +391,40 @@ def get_fairness_drift(group_id: int, user_id: int):
             "recent_drifts": recent_drifts
         }
         
+@app.get("/groups/{group_id}/members")
+def list_group_members(group_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT users.id, users.name, group_members.split_ratio
+        FROM group_members
+        JOIN users ON group_members.user_id = users.id
+        WHERE group_members.group_id = %s
+        ORDER BY group_members.id
+    """, (group_id,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"user_id": r[0], "name": r[1], "split_ratio": r[2]} for r in rows]
+
+@app.patch("/groups/{group_id}/members/{user_id}")
+def update_member_split(group_id: int, user_id: int, body: dict):
+    ratio = body.get("split_ratio")
+    if ratio is None or not (0 < ratio <= 1):
+        raise HTTPException(status_code=400, detail="split_ratio must be between 0 and 1.")
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE group_members SET split_ratio = %s WHERE group_id = %s AND user_id = %s",
+        (ratio, group_id, user_id)
+    )
+    if cursor.rowcount == 0:
+        conn.rollback()
+        conn.close()
+        raise HTTPException(status_code=404, detail="Member not found in this group.")
+    conn.commit()
+    conn.close()
+    return {"message": "Split ratio updated."}
+
 @app.get("/groups/{group_id}/expenses")
 def list_group_expenses(group_id: int):
     conn = get_connection()

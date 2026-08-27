@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { api } from '../api'
 import styles from './AddExpenseForm.module.css'
 
@@ -12,37 +12,69 @@ export default function AddExpenseForm({ groups, defaultGroupId, currentUserId, 
     cost: '',
     desc: '',
     date: todayISO(),
+    paid_by: currentUserId,
   })
+  const [members, setMembers] = useState([])
+  // splits: { [user_id]: ratio_string }
+  const [splits, setSplits] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
+  // Fetch members whenever group changes
+  useEffect(() => {
+    if (!form.group_id) return
+    api.getGroupMembers(Number(form.group_id)).then(ms => {
+      setMembers(ms)
+      // Initialise splits from each member's default ratio
+      const init = {}
+      ms.forEach(m => { init[m.user_id] = String(m.split_ratio) })
+      setSplits(init)
+    }).catch(() => {})
+  }, [form.group_id])
+
   function handleChange(e) {
-    setForm(f => ({ ...f, [e.target.name]: e.target.value }))
+    const { name, value } = e.target
+    setForm(f => ({ ...f, [name]: value }))
     setError('')
     setSuccess(false)
+  }
+
+  function handleSplitChange(uid, val) {
+    setSplits(s => ({ ...s, [uid]: val }))
+    setError('')
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
     const cost = parseFloat(form.cost)
-    if (isNaN(cost) || cost <= 0) {
-      setError('Enter a valid amount greater than zero.')
-      return
+    if (isNaN(cost) || cost <= 0) { setError('Enter a valid amount greater than zero.'); return }
+    if (!form.desc.trim()) { setError('Description is required.'); return }
+
+    // Validate splits
+    for (const m of members) {
+      const r = parseFloat(splits[m.user_id])
+      if (isNaN(r) || r < 0 || r > 1) {
+        setError(`Split ratio for ${m.name} must be between 0 and 1.`)
+        return
+      }
     }
-    if (!form.desc.trim()) {
-      setError('Description is required.')
-      return
-    }
+
+    const splitsPayload = members.map(m => ({
+      user_id: m.user_id,
+      split_ratio: parseFloat(splits[m.user_id] ?? m.split_ratio),
+    }))
+
     setLoading(true)
     setError('')
     try {
       await api.createExpense(
         Number(form.group_id),
-        currentUserId,
+        Number(form.paid_by),
         cost,
         form.desc.trim(),
         form.date,
+        splitsPayload,
       )
       setSuccess(true)
       setForm(f => ({ ...f, cost: '', desc: '', date: todayISO() }))
@@ -53,6 +85,8 @@ export default function AddExpenseForm({ groups, defaultGroupId, currentUserId, 
       setLoading(false)
     }
   }
+
+  const paidByMember = members.find(m => m.user_id === Number(form.paid_by))
 
   return (
     <div className={styles.wrapper}>
@@ -105,6 +139,7 @@ export default function AddExpenseForm({ groups, defaultGroupId, currentUserId, 
               value={form.desc}
               onChange={handleChange}
               placeholder="e.g. Dinner, Hotel, Gas"
+              autoComplete="off"
               required
             />
           </label>
@@ -121,10 +156,50 @@ export default function AddExpenseForm({ groups, defaultGroupId, currentUserId, 
             />
           </label>
 
-          <div className={styles.payerLine}>
+          <label className={styles.field}>
             <span className={styles.label}>PAID BY</span>
-            <span className={styles.payerValue}>YOU (User {currentUserId})</span>
-          </div>
+            <select
+              className={styles.input}
+              name="paid_by"
+              value={form.paid_by}
+              onChange={handleChange}
+              required
+            >
+              {members.length === 0 && (
+                <option value={currentUserId}>You</option>
+              )}
+              {members.map(m => (
+                <option key={m.user_id} value={m.user_id}>
+                  {m.user_id === currentUserId ? `${m.name} (you)` : m.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {members.length > 0 && (
+            <div className={styles.splitsSection}>
+              <span className={styles.label}>SPLIT RATIOS</span>
+              <div className={styles.splitHint}>
+                What fraction of this expense each person owes — not who paid.
+                e.g. set both to 0.5 for a 50/50 split.
+              </div>
+              {members.map(m => (
+                <div key={m.user_id} className={styles.splitRow}>
+                  <span className={styles.splitName}>
+                    {m.name}{m.user_id === currentUserId ? ' (you)' : ''}
+                  </span>
+                  <input
+                    className={`${styles.splitInput} ${styles.mono}`}
+                    type="number"
+                    min="0" max="1" step="0.01"
+                    value={splits[m.user_id] ?? ''}
+                    onChange={e => handleSplitChange(m.user_id, e.target.value)}
+                    placeholder="0.5"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           {error && <p className={styles.error}>{error}</p>}
           {success && <p className={styles.successMsg}>✓ EXPENSE RECORDED</p>}
