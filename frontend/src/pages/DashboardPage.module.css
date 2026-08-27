@@ -94,6 +94,92 @@
   opacity: 0.5;
 }
 
+/* New group */
+.newGroupBtn {
+  background: none;
+  border: 1px dashed var(--border);
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  text-align: left;
+  margin-top: 0.5rem;
+  transition: border-color 0.12s, color 0.12s;
+}
+
+.newGroupBtn:hover {
+  border-color: var(--ink-faint);
+  color: var(--ink);
+}
+
+.newGroupForm {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.newGroupInput {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--ink);
+  padding: 0.35rem 0;
+  font-size: 0.85rem;
+  color: var(--ink);
+  outline: none;
+  width: 100%;
+  font-family: var(--sans);
+}
+
+.newGroupInput::placeholder {
+  color: var(--ink-rule);
+}
+
+.newGroupError {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--red);
+}
+
+.newGroupActions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.newGroupSubmit {
+  flex: 1;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  padding: 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  transition: opacity 0.12s;
+}
+
+.newGroupSubmit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.newGroupCancel {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--border);
+  padding: 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.08em;
+}
+
+.newGroupCancel:hover {
+  color: var(--ink);
+}
+
 .logoutBtn {
   margin-top: auto;
   background: none;
@@ -155,10 +241,14 @@
 }
 
 .contentHeader {
+  margin-bottom: 1.75rem;
+}
+
+.contentTitleRow {
   display: flex;
   align-items: baseline;
   gap: 1rem;
-  margin-bottom: 1.75rem;
+  margin-bottom: 1rem;
 }
 
 .groupTitle {
@@ -174,6 +264,40 @@
   font-size: 0.7rem;
   color: var(--ink-faint);
   letter-spacing: 0.05em;
+}
+
+/* Tab bar */
+.tabBar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 0.5rem 1rem;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+  transition: color 0.12s, border-color 0.12s;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tabActive {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+.tabContent {
+  padding-top: 1.5rem;
 }
 
 .panels {
@@ -197,5 +321,8 @@
   }
   .main {
     padding: 1.5rem 1.25rem;
+  }
+  .tabBar {
+    overflow-x: auto;
   }
 }

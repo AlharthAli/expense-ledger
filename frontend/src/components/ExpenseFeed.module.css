@@ -1,0 +1,155 @@
+.wrapper {
+  max-width: 560px;
+}
+
+/* Torn edges — identical pattern to ReceiptCard */
+.tornTop,
+.tornBottom {
+  width: 100%;
+  height: 18px;
+  background-repeat: repeat-x;
+  background-size: 20px 18px;
+}
+
+.tornTop {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='18'%3E%3Cpath d='M0 18 L4 4 L7 12 L10 2 L13 10 L16 3 L20 18 Z' fill='%23FDFAF4' stroke='%23D4CFC6' stroke-width='0.5'/%3E%3C/svg%3E");
+  box-shadow: 0 -2px 4px rgba(28,26,23,0.06);
+}
+
+.tornBottom {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='18'%3E%3Cpath d='M0 0 L4 14 L7 6 L10 16 L13 8 L16 15 L20 0 Z' fill='%23FDFAF4' stroke='%23D4CFC6' stroke-width='0.5'/%3E%3C/svg%3E");
+  box-shadow: 0 2px 4px rgba(28,26,23,0.06);
+}
+
+.feed {
+  background: #FDFAF4;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 1.25rem 1.5rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--ink);
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 23px,
+    rgba(28,26,23,0.025) 23px,
+    rgba(28,26,23,0.025) 24px
+  );
+}
+
+.feedHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+
+.feedTitle {
+  font-size: 0.65rem;
+  letter-spacing: 0.16em;
+  color: var(--ink-faint);
+}
+
+.feedCount {
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-rule);
+}
+
+.dash {
+  border-top: 1px dashed var(--ink-rule);
+  margin: 0.65rem 0;
+}
+
+/* Entry */
+.entry {
+  padding: 0.2rem 0;
+}
+
+.entryTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.entryDesc {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.entryCost {
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  color: var(--ink);
+}
+
+.entryMeta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.1rem;
+}
+
+.entryDate {
+  font-size: 0.6rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+}
+
+.entryPayer {
+  font-size: 0.6rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+}
+
+.entryPayerMe {
+  color: var(--green);
+}
+
+.entryRule {
+  border-top: 1px dotted var(--ink-rule);
+  margin: 0.55rem 0 0.35rem;
+  opacity: 0.5;
+}
+
+/* Total */
+.total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.totalLabel {
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
+}
+
+.totalAmt {
+  font-size: 1rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* Empty state */
+.empty {
+  padding: 3rem 0;
+  text-align: center;
+}
+
+.emptyMsg {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  font-style: italic;
+}

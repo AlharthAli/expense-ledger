@@ -1,0 +1,170 @@
+.wrapper {
+  max-width: 420px;
+}
+
+.tornTop,
+.tornBottom {
+  width: 100%;
+  height: 18px;
+  background-repeat: repeat-x;
+  background-size: 20px 18px;
+}
+
+.tornTop {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='18'%3E%3Cpath d='M0 18 L4 4 L7 12 L10 2 L13 10 L16 3 L20 18 Z' fill='%23FDFAF4' stroke='%23D4CFC6' stroke-width='0.5'/%3E%3C/svg%3E");
+  box-shadow: 0 -2px 4px rgba(28,26,23,0.06);
+}
+
+.tornBottom {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='18'%3E%3Cpath d='M0 0 L4 14 L7 6 L10 16 L13 8 L16 15 L20 0 Z' fill='%23FDFAF4' stroke='%23D4CFC6' stroke-width='0.5'/%3E%3C/svg%3E");
+  box-shadow: 0 2px 4px rgba(28,26,23,0.06);
+}
+
+.inner {
+  background: #FDFAF4;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 2rem;
+  font-family: var(--mono);
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 23px,
+    rgba(28,26,23,0.025) 23px,
+    rgba(28,26,23,0.025) 24px
+  );
+}
+
+.receiptHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.receiptTitle {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: var(--ink);
+}
+
+.receiptDate {
+  font-size: 0.62rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.05em;
+}
+
+.dash {
+  border-top: 1px dashed var(--ink-rule);
+  margin: 1rem 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.label {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
+}
+
+.input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 0.4rem 0;
+  font-size: 0.95rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+  font-family: var(--sans);
+  appearance: none;
+}
+
+.input:focus {
+  border-bottom-color: var(--ink);
+}
+
+.input::placeholder {
+  color: var(--ink-rule);
+}
+
+/* Monospace number inputs */
+.mono {
+  font-family: var(--mono);
+}
+
+/* Payer display */
+.payerLine {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.payerValue {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Messages */
+.error {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--red);
+  background: var(--red-bg);
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--red);
+}
+
+.successMsg {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--green);
+  background: var(--green-bg);
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--green);
+  letter-spacing: 0.08em;
+}
+
+.btn {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  padding: 0.85rem 1rem;
+  width: 100%;
+  transition: opacity 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.footer {
+  text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-rule);
+}

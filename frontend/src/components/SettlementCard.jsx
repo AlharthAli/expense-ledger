@@ -59,8 +59,8 @@ export default function SettlementCard({ settlement, currentUserId }) {
                 </div>
                 <div className={styles.txnParties}>
                   {youPay
-                    ? `→ User ${t.to_user}`
-                    : `← User ${t.from_user}`}
+                    ? `→ ${t.to_name}`
+                    : `← ${t.from_name}`}
                 </div>
               </div>
             )
@@ -76,7 +76,7 @@ export default function SettlementCard({ settlement, currentUserId }) {
             <div key={i} className={`${styles.txn} ${styles.txnNeutral}`}>
               <div className={styles.txnArrow}>
                 <span className={styles.txnDirection}>
-                  User {t.from_user} → User {t.to_user}
+                  {t.from_name} → {t.to_name}
                 </span>
                 <span className={styles.txnAmt}>${fmt(t.amount)}</span>
               </div>

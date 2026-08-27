@@ -175,15 +175,24 @@ def get_group_balances(group_id: int):
     """, (group_id,))
     owed = dict(cursor.fetchall())
 
+    # Fetch names for all members
+    member_ids = list(set(paid.keys()) | set(owed.keys()))
+    names = {}
+    if member_ids:
+        cursor.execute("SELECT id, name FROM users WHERE id = ANY(%s)", (member_ids,))
+        names = dict(cursor.fetchall())
+
     conn.close()
 
-    # Combine into net balances: positive = owed money, negative = owes money
-    member_ids = set(paid.keys()) | set(owed.keys())
-    balances = {}
-    for user_id in member_ids:
-        balances[user_id] = round(paid.get(user_id, 0) - owed.get(user_id, 0), 2)
-
-    return balances
+    # Return list of {user_id, name, balance} — positive = owed money, negative = owes money
+    return [
+        {
+            "user_id": uid,
+            "name": names.get(uid, f"User {uid}"),
+            "balance": round(paid.get(uid, 0) - owed.get(uid, 0), 2),
+        }
+        for uid in member_ids
+    ]
 def simplify_debts(balances):
     creditors = [[uid, bal] for uid, bal in balances.items() if bal > 0]
     debtors = [[uid, bal] for uid, bal in balances.items() if bal < 0]
@@ -235,14 +244,35 @@ def get_settlement(group_id: int):
     """, (group_id,))
     owed = dict(cursor.fetchall())
 
+    # Fetch names for all members
+    member_ids = list(set(paid.keys()) | set(owed.keys()))
+    names = {}
+    if member_ids:
+        cursor.execute("SELECT id, name FROM users WHERE id = ANY(%s)", (member_ids,))
+        names = dict(cursor.fetchall())
+
     conn.close()
 
-    member_ids = set(paid.keys()) | set(owed.keys())
     balances = {uid: round(paid.get(uid, 0) - owed.get(uid, 0), 2) for uid in member_ids}
-
     transactions = simplify_debts(balances)
 
-    return {"balances": balances, "settlement": transactions}
+    named_balances = [
+        {"user_id": uid, "name": names.get(uid, f"User {uid}"), "balance": bal}
+        for uid, bal in balances.items()
+    ]
+
+    named_transactions = [
+        {
+            "from_user": t["from_user"],
+            "from_name": names.get(t["from_user"], f"User {t['from_user']}"),
+            "to_user":   t["to_user"],
+            "to_name":   names.get(t["to_user"],   f"User {t['to_user']}"),
+            "amount":    t["amount"],
+        }
+        for t in transactions
+    ]
+
+    return {"balances": named_balances, "settlement": named_transactions}
 
 DRIFT_WINDOW = 5  # how many recent expenses to look back across
 

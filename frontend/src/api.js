@@ -29,4 +29,13 @@ export const api = {
 
   getGroupExpenses: (groupId) =>
     request("GET", `/groups/${groupId}/expenses`),
+
+  createGroup: (name) =>
+    request("POST", "/groups", { name }),
+
+  createExpense: (groupId, userId, cost, desc, date) =>
+    request("POST", "/expenses", { group_id: groupId, user_id: userId, cost, desc, date }),
+
+  addGroupMember: (groupId, userId, splitRatio) =>
+    request("POST", "/group-members", { group_id: groupId, user_id: userId, split_ratio: splitRatio }),
 };

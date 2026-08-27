@@ -9,15 +9,18 @@ function pad(str, width) {
   return s.length >= width ? s : s + ' '.repeat(width - s.length)
 }
 
+// balances is now [{user_id, name, balance}]
 export default function ReceiptCard({ groupName, balances, expenses, currentUserId }) {
   if (!balances) return null
 
-  const entries = Object.entries(balances).map(([uid, bal]) => ({
-    uid: Number(uid),
-    bal: Number(bal),
+  const entries = balances.map(b => ({
+    uid:  b.user_id,
+    name: b.name,
+    bal:  Number(b.balance),
   }))
 
-  const myBalance = balances[currentUserId] !== undefined ? Number(balances[currentUserId]) : null
+  const myEntry = balances.find(b => b.user_id === currentUserId)
+  const myBalance = myEntry !== undefined ? Number(myEntry.balance) : null
 
   const totalSpend = expenses.reduce((s, e) => s + Number(e.cost), 0)
 
@@ -91,7 +94,7 @@ export default function ReceiptCard({ groupName, balances, expenses, currentUser
         <div className={styles.sectionLabel}>MEMBER BALANCES</div>
 
         {/* Balance per member */}
-        {entries.map(({ uid, bal }) => {
+        {entries.map(({ uid, name, bal }) => {
           const isMe = uid === currentUserId
           const positive = bal >= 0
           return (
@@ -100,7 +103,7 @@ export default function ReceiptCard({ groupName, balances, expenses, currentUser
               className={`${styles.balanceRow} ${isMe ? styles.balanceRowMe : ''}`}
             >
               <span className={styles.balanceUid}>
-                {isMe ? '▶ YOU' : `USER ${uid}`}
+                {isMe ? `▶ ${name.toUpperCase()}` : name.toUpperCase()}
               </span>
               <span className={`${styles.balanceAmt} ${positive ? styles.green : styles.red}`}>
                 {positive ? '+' : '-'}${fmt(bal)}
