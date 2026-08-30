@@ -429,12 +429,18 @@ def update_member_split(group_id: int, user_id: int, body: dict):
 def list_group_expenses(group_id: int):
     conn = get_connection()
     cursor = conn.cursor()
-    
-    cursor.execute("SELECT * FROM expenses WHERE group_id = %s", (group_id,))
+
+    cursor.execute(
+        "SELECT id, group_id, user_id, cost, description, date FROM expenses WHERE group_id = %s ORDER BY date DESC",
+        (group_id,)
+    )
     rows = cursor.fetchall()
-    
+
     conn.close()
-    return rows
+    return [
+        {"id": r[0], "group_id": r[1], "user_id": r[2], "cost": r[3], "description": r[4], "date": str(r[5])}
+        for r in rows
+    ]
 
 @app.get("/users/{user_id}/groups")
 def list_user_groups(user_id: int):
