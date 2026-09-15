@@ -1,6 +1,6 @@
 # Expense Ledger
 
-A full-stack shared expense tracker — split costs between friends, track balances, detect fairness drift, and settle up with a single click.
+A full-stack shared expense tracker — split costs between friends, track balances, detect fairness drift, and settle up with a single click. Balances update live across open sessions via WebSockets.
 
 ## Live URLs
 
@@ -14,25 +14,26 @@ A full-stack shared expense tracker — split costs between friends, track balan
 
 ```
 Browser (React app on S3)
-   │
-   ▼
-AWS S3 (static site hosting)
-   │  serves index.html + JS/CSS assets
-   │
-   │  API calls (HTTP)
-   ▼
-AWS ALB (expense-ledger-alb, port 80)
-   │  stable DNS, forwards to port 8000
-   ▼
-AWS ECS Fargate (expense-ledger-service)
-   │  cluster: expense-ledger-cluster
-   │  image: 930271538018.dkr.ecr.us-east-2.amazonaws.com/expense-ledger:latest
-   ▼
-FastAPI app (uvicorn, port 8000)
-   │
-   ▼
-AWS RDS (PostgreSQL, private subnet)
+   |
+   |--> HTTP requests -----------------+
+   |                                   |
+   +--> WebSocket (ws://.../ws/groups/{id})
+                                        |
+                                        v
+                          AWS ALB (expense-ledger-alb, port 80)
+                                        |  stable DNS, forwards to port 8000
+                                        v
+                          AWS ECS Fargate (expense-ledger-service)
+                                        |  cluster: expense-ledger-cluster
+                                        |  image: 930271538018.dkr.ecr.us-east-2.amazonaws.com/expense-ledger:latest
+                                        v
+                          FastAPI app (uvicorn, port 8000)
+                                        |
+                                        v
+                          AWS RDS (PostgreSQL, private subnet)
 ```
+
+**Live updates:** the frontend opens a WebSocket connection to `/ws/groups/{group_id}` whenever a group's dashboard is open. Adding an expense or recording a settlement broadcasts a simple "update" message to every connection currently watching that group, which triggers an automatic re-fetch of balances — no manual refresh needed, and no polling.
 
 **AWS Resources:**
 - Region: `us-east-2`
@@ -62,6 +63,7 @@ AWS RDS (PostgreSQL, private subnet)
 | GET | `/groups/{group_id}/settlement` | Get simplified debt settlement plan |
 | GET | `/groups/{group_id}/members/{user_id}/drift` | Detect fairness drift for a member |
 | POST | `/settle` | Record a settlement payment between two users |
+| WS | `/ws/groups/{group_id}` | Live connection — broadcasts "update" whenever this group's expenses or settlements change |
 
 ## Running Locally
 
@@ -71,6 +73,8 @@ uvicorn main:app --reload --port 8000
 ```
 
 Set environment variables: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`.
+
+Note: `requirements.txt` specifies `uvicorn[standard]`, not plain `uvicorn` — the `[standard]` extra pulls in the `websockets` package, which uvicorn requires to actually handle the WebSocket upgrade handshake. Without it, WebSocket routes silently fall through to a 404.
 
 ## Deploying to AWS
 
