@@ -1,4 +1,4 @@
-const BASE = "http://expense-ledger-alb-185467570.us-east-2.elb.amazonaws.com";
+export const BASE = "http://expense-ledger-alb-185467570.us-east-2.elb.amazonaws.com";
 
 async function request(method, path, body) {
   const opts = {

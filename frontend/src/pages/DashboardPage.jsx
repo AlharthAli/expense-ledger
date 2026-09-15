@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getUser, clearUser } from '../auth'
-import { api } from '../api'
+import { api, BASE } from '../api'
 import ReceiptCard from '../components/ReceiptCard'
 import SettlementCard from '../components/SettlementCard'
 import ExpenseFeed from '../components/ExpenseFeed'
@@ -74,6 +74,22 @@ export default function DashboardPage() {
       setLoading(false)
     }
   }, [user.id])
+
+  useEffect(() => {
+    if (!selectedGroup) return
+
+    let ws
+    try {
+      const wsBase = BASE.replace(/^http/, 'ws')
+      ws = new WebSocket(`${wsBase}/ws/groups/${selectedGroup.id}`)
+      ws.onmessage = () => loadGroup(selectedGroup.id)
+      ws.onerror = () => {} // silently ignore — page still works via manual fetch
+    } catch {
+      // WebSocket not available; graceful degradation
+    }
+
+    return () => ws?.close()
+  }, [selectedGroup, loadGroup])
 
   function selectGroup(group) {
     setSelectedGroup(group)
