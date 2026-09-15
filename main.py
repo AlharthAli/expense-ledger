@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -31,6 +31,29 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal server error — check your input and try again."},
     )
 
+active_connections = {}
+
+def add_connection(group_id, websocket):
+    if group_id not in active_connections:
+        active_connections[group_id] = []
+    active_connections[group_id].append(websocket)
+
+async def broadcast_update(group_id):
+    if group_id in active_connections:
+        for connection in active_connections[group_id]:
+            await connection.send_text("update")
+
+@app.websocket("/ws/groups/{group_id}")
+async def group_websocket(websocket: WebSocket, group_id: int):
+    await websocket.accept()
+    add_connection(group_id, websocket)
+
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        active_connections[group_id].remove(websocket)
+        
 def get_connection():
     return psycopg2.connect(
         host=os.getenv("DB_HOST"),
@@ -178,7 +201,7 @@ def add_group_member(member: GroupMember):
     return {"message": "Group member added successfully"}
 
 @app.post("/expenses")
-def create_expense(expense: Expense):
+async def create_expense(expense: Expense):
     conn = get_connection()
     cursor = conn.cursor()
     
@@ -209,6 +232,9 @@ def create_expense(expense: Expense):
     
     conn.commit()
     conn.close()
+
+    await broadcast_update(expense.group_id)
+
     return {"message": "Expense added and split successfully"}
 
 @app.get("/groups/{group_id}/balances")
@@ -459,7 +485,7 @@ def list_user_groups(user_id: int):
     return rows
 
 @app.post("/settle")
-def settle_payment(settlement: Settlement):
+async def settle_payment(settlement: Settlement):
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -476,4 +502,7 @@ def settle_payment(settlement: Settlement):
 
     conn.commit()
     conn.close()
+
+    await broadcast_update(settlement.group_id)
+
     return {"message": "Settlement recorded successfully"}
